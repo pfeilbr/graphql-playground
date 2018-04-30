@@ -5,11 +5,13 @@ project to learn and experiment with [graphql](https://graphql.org/) using [Apol
 ## server
 
 * location - `src/server'
+* entrypoint - `src/server/index.ts`
 * run - `npm start`
 
 ## client
 
 * location - `src/client'
+* entrypoint - `src/client/App.tsx`
 * run - `npm start`
 
 > ensure server is running
