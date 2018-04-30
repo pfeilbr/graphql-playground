@@ -1,5 +1,6 @@
 import { graphiqlExpress, graphqlExpress } from "apollo-server-express"
 import bodyParser from "body-parser"
+import cors from "cors"
 import express from "express"
 import { makeExecutableSchema } from "graphql-tools"
 
@@ -31,7 +32,8 @@ const resolvers = {
     oneBook: () => books[0],
   },
   Mutation: {
-    createBook: (root: any, arg: { id: string, title: string, author: string } | any) => {
+    createBook: (root: any, arg: { id: string, title: string, author: string } | any, context: any) => {
+      console.log("context", context)
       const book = {id: arg.id, title: arg.title, author: arg.author}
       books.push(book)
       return book
@@ -48,13 +50,27 @@ const schema = makeExecutableSchema({
 // Initialize the app
 const app = express()
 
+app.use(cors())
+
 // The GraphQL endpoint
-app.use("/graphql", bodyParser.json(), graphqlExpress({ schema }))
+app.use(
+  "/graphql",
+  bodyParser.json(),
+  graphqlExpress((req) => {
+    // fetch user example / authenticate here
+    const user = {id: 0, username: "johndoe"}
+    return {
+      schema,
+      context: {
+        user,
+      },
+    }
+  }))
 
 // GraphiQL, a visual editor for queries
 app.use("/graphiql", graphiqlExpress({ endpointURL: "/graphql" }))
 
 // Start the server
 app.listen(3000, () => {
-  console.log("Go to http://localhost:3000/graphiql to run queries!");
+  console.log("Go to http://localhost:3000/graphiql to run queries!")
 })
