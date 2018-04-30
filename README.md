@@ -7,6 +7,13 @@ project to learn and experiment with [graphql](https://graphql.org/) using [Apol
 * location - `src/server'
 * run - `npm start`
 
+## client
+
+* location - `src/client'
+* run - `npm start`
+
+> ensure server is running
+
 ## Examples
 
 Run via GraphiQL @ <http://localhost:3000/graphiql>
@@ -21,7 +28,7 @@ query {
 }
 
 mutation {
-  createBook(id: "2", title: "How To", author: "John Doe") {
+  createBook(title: "How To", author: "John Doe") {
     id,
     title
     author

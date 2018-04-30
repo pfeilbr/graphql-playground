@@ -3,16 +3,17 @@ import bodyParser from "body-parser"
 import cors from "cors"
 import express from "express"
 import { makeExecutableSchema } from "graphql-tools"
+import uuidv4 from "uuid/v4"
 
 // Some fake data
 const books = [
   {
-    id: 0,
+    id: uuidv4(),
     title: "Harry Potter and the Sorcerer's stone",
     author: "J.K. Rowling",
   },
   {
-    id: 1,
+    id: uuidv4(),
     title: "Jurassic Park",
     author: "Michael Crichton",
   },
@@ -22,7 +23,7 @@ const books = [
 const typeDefs = `
   type Query { books: [Book],  oneBook: Book }
   type Book { id: ID!, title: String, author: String }
-  type Mutation { createBook(id:String, title:String, author:String): Book}
+  type Mutation { createBook(title:String, author:String): Book}
 `
 
 // The resolvers
@@ -32,9 +33,9 @@ const resolvers = {
     oneBook: () => books[0],
   },
   Mutation: {
-    createBook: (root: any, arg: { id: string, title: string, author: string } | any, context: any) => {
+    createBook: (root: any, arg: {title: string, author: string } | any, context: any) => {
       console.log("context", context)
-      const book = {id: arg.id, title: arg.title, author: arg.author}
+      const book = {id: uuidv4(), title: arg.title, author: arg.author}
       books.push(book)
       return book
     },

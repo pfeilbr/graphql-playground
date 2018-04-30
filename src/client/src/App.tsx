@@ -6,24 +6,26 @@ import logo from './logo.svg';
 import ApolloClient from "apollo-boost";
 import gql from "graphql-tag";
 import { ApolloProvider } from "react-apollo";
-import { Query } from "react-apollo";
+import { Mutation, Query } from "react-apollo";
 
 const client = new ApolloClient({
   uri: "http://localhost:3000/graphql"
 });
 
+const GET_BOOKS = gql`
+{
+  books {
+    id,
+    title,
+    author,
+  }
+}
+`
+
 // manual example
 client
   .query({
-    query: gql`
-      {
-        books {
-          id,
-          title,
-          author,
-        }
-      }
-    `
+    query: GET_BOOKS
   })
   .then(result => console.log(result));
 
@@ -31,15 +33,7 @@ client
     <div style={{border: "solid 1px black"}}>
     <h1>Books</h1>
     <Query
-      query={gql`
-        {
-          books {
-            id,
-            title,
-            author,
-          }
-        }
-      `}
+      query={GET_BOOKS}
     >
       {({ loading, error, data }) => {
         if (loading) { return <p>Loading...</p>; }
@@ -55,6 +49,64 @@ client
     </div>
   );
 
+  const ADD_BOOK = gql`
+  mutation addBook($title: String!, $author: String!) {
+    createBook(title: $title, author: $author) {
+      id
+      title
+      author
+    }
+  }
+`;
+
+const AddBook = () => {
+  let titleInput: any;
+  let authorInput: any;
+
+  return (
+    <Mutation
+      mutation={ADD_BOOK}
+      // tslint:disable-next-line:jsx-no-lambda
+      update={(cache, { data: { createBook } }) => {
+        const { books }: any = cache.readQuery({ query: GET_BOOKS });
+        console.log("books", books) // cached books
+        console.log("addBook", createBook) // newly created book
+        cache.writeQuery({
+          data: { books: books.concat([createBook]) },          
+          query: GET_BOOKS,
+        });
+      }}
+    >
+      {(addBook, { data }) => (
+        <div>
+          <form
+            // tslint:disable-next-line:jsx-no-lambda
+            onSubmit={(e) => {
+              e.preventDefault();
+              addBook({ variables: { title: titleInput.value, author: authorInput.value } });
+              titleInput.value = "";
+              authorInput.value = ""
+            }}
+          >
+            Title: <input
+              ref={node => {
+                titleInput = node;
+              }}
+            />
+            Author: <input
+              ref={node => {
+                authorInput = node;
+              }}
+            />
+            
+            <button type="submit">Add Book</button>
+          </form>
+        </div>
+      )}
+    </Mutation>
+  );
+};  
+
 class App extends React.Component {
   public render() {
     return (
@@ -68,6 +120,7 @@ class App extends React.Component {
           To get started, edit <code>src/App.tsx</code> and save to reload.
         </p>
         <Books />
+        <AddBook />
       </div>
       </ApolloProvider>
     );
