@@ -3,6 +3,7 @@ import bodyParser from "body-parser"
 import cors from "cors"
 import express from "express"
 import { makeExecutableSchema } from "graphql-tools"
+import morgan from "morgan"
 import uuidv4 from "uuid/v4"
 
 // Some fake data
@@ -48,17 +49,16 @@ const schema = makeExecutableSchema({
   resolvers,
 })
 
-// Initialize the app
 const app = express()
 
+app.use(morgan(":method :url :req[authorization]"))
 app.use(cors())
 
-// The GraphQL endpoint
 app.use(
   "/graphql",
   bodyParser.json(),
   graphqlExpress((req) => {
-    // fetch user example / authenticate here
+    // fetch user example / authenticate here. e.g. req.headers["authorization"]
     const user = {id: 0, username: "johndoe"}
     return {
       schema,
@@ -71,7 +71,6 @@ app.use(
 // GraphiQL, a visual editor for queries
 app.use("/graphiql", graphiqlExpress({ endpointURL: "/graphql" }))
 
-// Start the server
 app.listen(3000, () => {
   console.log("Go to http://localhost:3000/graphiql to run queries!")
 })

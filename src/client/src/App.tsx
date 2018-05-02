@@ -3,13 +3,21 @@ import './App.css';
 
 import logo from './logo.svg';
 
-import ApolloClient from "apollo-boost";
-import gql from "graphql-tag";
+import ApolloClient, { gql } from "apollo-boost";
+// import gql from "graphql-tag";
 import { ApolloProvider } from "react-apollo";
 import { Mutation, Query } from "react-apollo";
 
 const client = new ApolloClient({
-  uri: "http://localhost:3000/graphql"
+  request: async (operation) => {
+    const token = "my-secret-auth-token" // await AsyncStorage.getItem('token');
+    operation.setContext({
+      headers: {
+        authorization: token
+      }
+    });
+  },
+  uri: "http://localhost:3000/graphql",  
 });
 
 const GET_BOOKS = gql`
