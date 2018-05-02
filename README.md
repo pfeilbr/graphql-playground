@@ -15,7 +15,7 @@ project to learn and experiment with [graphql](https://graphql.org/) using [Apol
 * entrypoint - `src/client/App.tsx`
 * run - `npm start`
 
-> ensure server is running
+> ensure server is running on port 3000
 
 ## Examples
 

@@ -8,6 +8,9 @@
         "no-console": [
             false
         ],
+        "jsx-no-lambda": [
+            false
+        ],
         "semicolon": [true, "never"],
         "object-literal-sort-keys": false,
         "object-literal-quote-keys": false

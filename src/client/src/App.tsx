@@ -4,7 +4,6 @@ import './App.css';
 import logo from './logo.svg';
 
 import ApolloClient, { gql } from "apollo-boost";
-// import gql from "graphql-tag";
 import { ApolloProvider } from "react-apollo";
 import { Mutation, Query } from "react-apollo";
 
@@ -74,7 +73,6 @@ const AddBook = () => {
   return (
     <Mutation
       mutation={ADD_BOOK}
-      // tslint:disable-next-line:jsx-no-lambda
       update={(cache, { data: { createBook } }) => {
         const { books }: any = cache.readQuery({ query: GET_BOOKS });
         console.log("books", books) // cached books
@@ -88,7 +86,6 @@ const AddBook = () => {
       {(addBook, { data }) => (
         <div>
           <form
-            // tslint:disable-next-line:jsx-no-lambda
             onSubmit={(e) => {
               e.preventDefault();
               addBook({ variables: { title: titleInput.value, author: authorInput.value } });
