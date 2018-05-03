@@ -1,23 +1,62 @@
 import * as React from 'react';
 import './App.css';
 
-import logo from './logo.svg';
-
-import ApolloClient, { gql } from "apollo-boost";
+// import ApolloClient, { gql } from "apollo-boost";
+import { InMemoryCache } from "apollo-cache-inmemory";
+import { ApolloClient } from "apollo-client";
+import { split } from "apollo-link";
+import { HttpLink } from "apollo-link-http";
+import { WebSocketLink } from "apollo-link-ws";
+import { getMainDefinition } from "apollo-utilities";
+import { DocumentNode, OperationDefinitionNode } from "graphql";
+import gql from "graphql-tag"
 import { ApolloProvider } from "react-apollo";
 import { Mutation, Query } from "react-apollo";
 
-const client = new ApolloClient({
-  request: async (operation) => {
-    const token = "my-secret-auth-token" // await AsyncStorage.getItem('token');
-    operation.setContext({
-      headers: {
-        authorization: token
-      }
-    });
-  },
-  uri: "http://localhost:3000/graphql",  
+// Create an http link:
+const httpLink = new HttpLink({
+  uri: 'http://localhost:3000/graphql'
 });
+
+// Create a WebSocket link:
+const wsLink = new WebSocketLink({
+  uri: `ws://localhost:3000/subscriptions`,
+  options: {
+    reconnect: true,
+    connectionParams: {
+      authToken: "my-secret-auth-token",
+  },    
+  }
+});
+
+// using the ability to split links, you can send data to each link
+// depending on what kind of operation is being sent
+const link = split(
+  // split based on operation type
+  ({ query }) => {
+    const { kind, operation } = getMainDefinition(query as DocumentNode) as OperationDefinitionNode;
+    return kind === 'OperationDefinition' && operation === 'subscription';
+  },
+  wsLink,
+  httpLink,
+);
+
+const client = new ApolloClient({
+  link,
+  cache: new InMemoryCache()
+});
+
+// const client = new ApolloClient({
+//   request: async (operation) => {
+//     const token = "my-secret-auth-token" // await AsyncStorage.getItem('token');
+//     operation.setContext({
+//       headers: {
+//         authorization: token
+//       }
+//     });
+//   },
+//   uri: "http://localhost:3000/graphql",  
+// });
 
 const GET_BOOKS = gql`
 {
@@ -29,16 +68,62 @@ const GET_BOOKS = gql`
 }
 `
 
-// manual example
+// manual query example
 client
   .query({
     query: GET_BOOKS
   })
   .then(result => console.log(result));
 
+
+class BookSubscriptions extends React.Component<any, any, any> {
+
+  constructor(props: any) {
+    super(props);
+    this.state = {books: []};
+  }  
+    
+  public render() {
+    return (
+      <div>
+        <h3>Book Subscriptions (GraphQL Subscription)</h3>
+        <ul>
+        {this.state.books.map((book: any) =>
+          <li key={book.id}>Title: {book.title} Author: {book.author}</li>
+        )}
+        </ul>
+      </div>
+    )
+  }
+
+  public componentWillMount() {
+    const that = this
+    // manual subscribe example
+    client.subscribe({
+      query: gql`
+        subscription onBookAdded {
+          bookAdded {
+            id
+            title
+            author
+          }
+        }`,
+      variables: {}
+    }).subscribe({
+      next (data) {
+        console.log("data", data)
+        that.setState((prev: any) => {
+          return Object.assign(prev, {books: prev.books.concat([data.data.bookAdded])})
+        })
+      }
+    });
+  }
+
+}
+
   const Books = () => (
     <div style={{border: "solid 1px black"}}>
-    <h1>Books</h1>
+    <h3>Books</h3>
     <Query
       query={GET_BOOKS}
     >
@@ -48,7 +133,7 @@ client
   
         return data.books.map(({ id, title, author }: any) => (
           <div key={id}>
-            <p>{`${title}: ${author}`}</p>
+            <p>{`Title:${title} Author:${author}`}</p>
           </div>
         ));
       }}
@@ -75,8 +160,8 @@ const AddBook = () => {
       mutation={ADD_BOOK}
       update={(cache, { data: { createBook } }) => {
         const { books }: any = cache.readQuery({ query: GET_BOOKS });
-        console.log("books", books) // cached books
-        console.log("addBook", createBook) // newly created book
+        // console.log("books", books) // cached books
+        // console.log("addBook", createBook) // newly created book
         cache.writeQuery({
           data: { books: books.concat([createBook]) },          
           query: GET_BOOKS,
@@ -84,7 +169,8 @@ const AddBook = () => {
       }}
     >
       {(addBook, { data }) => (
-        <div>
+        <div style={{border: "solid 1px black", padding: "40px"}}>
+        <h3>Add Book</h3>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -104,7 +190,7 @@ const AddBook = () => {
               }}
             />
             
-            <button type="submit">Add Book</button>
+            <button type="submit">Add</button>
           </form>
         </div>
       )}
@@ -118,14 +204,14 @@ class App extends React.Component {
       <ApolloProvider client={client}>
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
+          <h1 className="App-title">Apollo GraphQL Playground</h1>
         </header>
         <p className="App-intro">
-          To get started, edit <code>src/App.tsx</code> and save to reload.
+          Example usage of Apollo GraphQL
         </p>
+        <AddBook />        
         <Books />
-        <AddBook />
+        <BookSubscriptions />
       </div>
       </ApolloProvider>
     );
