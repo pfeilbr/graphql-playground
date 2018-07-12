@@ -5,6 +5,7 @@ import './App.css';
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloClient } from "apollo-client";
 import { split } from "apollo-link";
+import { setContext } from "apollo-link-context";
 import { HttpLink } from "apollo-link-http";
 import { WebSocketLink } from "apollo-link-ws";
 import { getMainDefinition } from "apollo-utilities";
@@ -16,6 +17,21 @@ import { Mutation, Query } from "react-apollo";
 // Create an http link:
 const httpLink = new HttpLink({
   uri: 'http://localhost:3000/graphql'
+});
+
+// set "Authorization" header on each request to server
+// see https://www.apollographql.com/docs/react/recipes/authentication.html#Header
+const authLink = setContext((_, { headers }) => {
+  // get the authentication token from local storage if it exists
+  // const token = localStorage.getItem('token');
+  const token = "my-secret-auth-token"
+  // return the headers to the context so httpLink can read them
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : "",
+    }
+  }
 });
 
 // Create a WebSocket link:
@@ -38,12 +54,12 @@ const link = split(
     return kind === 'OperationDefinition' && operation === 'subscription';
   },
   wsLink,
-  httpLink,
+  authLink.concat(httpLink),
 );
 
 const client = new ApolloClient({
   link,
-  cache: new InMemoryCache()
+  cache: new InMemoryCache(),
 });
 
 // const client = new ApolloClient({
@@ -59,7 +75,7 @@ const client = new ApolloClient({
 // });
 
 const GET_BOOKS = gql`
-{
+query {
   books {
     id,
     title,

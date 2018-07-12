@@ -41,6 +41,8 @@ mutation {
 
 ## Screenshots
 
+subscriptiion push over websocket
+
 ![](https://www.evernote.com/l/AAEb4fvY3TtOUK1cIiahAMyfy3Hg1dv2l60B/image.png)
 
 ## Scratch
