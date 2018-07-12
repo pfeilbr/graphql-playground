@@ -62,18 +62,6 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-// const client = new ApolloClient({
-//   request: async (operation) => {
-//     const token = "my-secret-auth-token" // await AsyncStorage.getItem('token');
-//     operation.setContext({
-//       headers: {
-//         authorization: token
-//       }
-//     });
-//   },
-//   uri: "http://localhost:3000/graphql",  
-// });
-
 const GET_BOOKS = gql`
 query {
   books {
