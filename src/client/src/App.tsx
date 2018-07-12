@@ -1,12 +1,12 @@
 import * as React from 'react';
 import './App.css';
 
-// import ApolloClient, { gql } from "apollo-boost";
 import { InMemoryCache } from "apollo-cache-inmemory";
 import { ApolloClient } from "apollo-client";
-import { split } from "apollo-link";
+import { ApolloLink, split } from "apollo-link";
 import { setContext } from "apollo-link-context";
 import { HttpLink } from "apollo-link-http";
+import { withClientState } from 'apollo-link-state'
 import { WebSocketLink } from "apollo-link-ws";
 import { getMainDefinition } from "apollo-utilities";
 import { DocumentNode, OperationDefinitionNode } from "graphql";
@@ -17,7 +17,7 @@ import { Mutation, Query } from "react-apollo";
 // Create an http link:
 const httpLink = new HttpLink({
   uri: 'http://localhost:3000/graphql'
-});
+})
 
 // set "Authorization" header on each request to server
 // see https://www.apollographql.com/docs/react/recipes/authentication.html#Header
@@ -32,7 +32,7 @@ const authLink = setContext((_, { headers }) => {
       authorization: token ? `Bearer ${token}` : "",
     }
   }
-});
+})
 
 // Create a WebSocket link:
 const wsLink = new WebSocketLink({
@@ -43,7 +43,7 @@ const wsLink = new WebSocketLink({
       authToken: "my-secret-auth-token",
   },    
   }
-});
+})
 
 // using the ability to split links, you can send data to each link
 // depending on what kind of operation is being sent
@@ -55,12 +55,33 @@ const link = split(
   },
   wsLink,
   authLink.concat(httpLink),
-);
+)
+
+const cache = new InMemoryCache()
+
+
+const stateLink = withClientState({
+  cache,
+  resolvers: {
+    Mutation: {
+      updateNetworkStatus: (_, { isConnected }, { cache }) => {
+        const data = {
+          networkStatus: {
+            __typename: 'NetworkStatus',
+            isConnected
+          },
+        };
+        cache.writeData({ data });
+        return null;
+      },
+    },
+  }
+});
 
 const client = new ApolloClient({
-  link,
-  cache: new InMemoryCache(),
-});
+  link: ApolloLink.from([stateLink,link]),
+  cache,
+})
 
 const GET_BOOKS = gql`
 query {
@@ -125,27 +146,27 @@ class BookSubscriptions extends React.Component<any, any, any> {
 
 }
 
-  const Books = () => (
-    <div style={{border: "solid 1px black"}}>
-    <h3>Books</h3>
-    <Query
-      query={GET_BOOKS}
-    >
-      {({ loading, error, data }) => {
-        if (loading) { return <p>Loading...</p>; }
-        if (error) { return <p>Error :(</p>; }
-  
-        return data.books.map(({ id, title, author }: any) => (
-          <div key={id}>
-            <p>{`Title:${title} Author:${author}`}</p>
-          </div>
-        ));
-      }}
-    </Query>
-    </div>
-  );
+const Books = () => (
+  <div style={{border: "solid 1px black"}}>
+  <h3>Books</h3>
+  <Query
+    query={GET_BOOKS}
+  >
+    {({ loading, error, data }) => {
+      if (loading) { return <p>Loading...</p>; }
+      if (error) { return <p>Error :(</p>; }
 
-  const ADD_BOOK = gql`
+      return data.books.map(({ id, title, author }: any) => (
+        <div key={id}>
+          <p>{`Title:${title} Author:${author}`}</p>
+        </div>
+      ));
+    }}
+  </Query>
+  </div>
+)
+
+const ADD_BOOK = gql`
   mutation addBook($title: String!, $author: String!) {
     createBook(title: $title, author: $author) {
       id
@@ -153,7 +174,7 @@ class BookSubscriptions extends React.Component<any, any, any> {
       author
     }
   }
-`;
+`
 
 const AddBook = () => {
   let titleInput: any;
@@ -199,8 +220,8 @@ const AddBook = () => {
         </div>
       )}
     </Mutation>
-  );
-};  
+  )
+} 
 
 class App extends React.Component {
   public render() {

@@ -18,6 +18,10 @@
     ],
     "max-classes-per-file": [
       false
-    ]
+    ],
+    "no-any": false,
+    "no-unsafe-any": false,
+    "no-shadowed-variable": false
+
   }  
 }
