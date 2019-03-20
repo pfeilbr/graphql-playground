@@ -4,16 +4,16 @@ project to learn and experiment with [graphql](https://graphql.org/) using [Apol
 
 ## server
 
-* location - `src/server'
-* entrypoint - `src/server/index.ts`
-* dev (reload on change) - `npm run dev`
-* run - `npm start`
+- location - `src/server'
+- entrypoint - `src/server/index.ts`
+- dev (reload on change) - `npm run dev`
+- run - `npm start`
 
 ## client
 
-* location - `src/client'
-* entrypoint - `src/client/App.tsx`
-* run - `npm start`
+- location - `src/client'
+- entrypoint - `src/client/App.tsx`
+- run - `npm start`
 
 > ensure server is running on port 3000
 
@@ -33,6 +33,14 @@ query {
 mutation {
   createBook(title: "How To", author: "John Doe") {
     id,
+    title
+    author
+  }
+}
+
+subscription onBookAdded {
+  bookAdded {
+    id
     title
     author
   }
